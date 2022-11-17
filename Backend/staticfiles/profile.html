@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+#container-gauge {
+    max-width: 300px;
+    margin: 5px auto;
+}
+.highcharts-figure,
+.highcharts-data-table table {
+    min-width: 200px;
+    max-width: 600px;
+    max-height: 300px;
+    margin: 0 auto;
+}
+
+.highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    border: 1px solid #ebebeb;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+}
+
+.highcharts-data-table td,
+.highcharts-data-table th,
+.highcharts-data-table caption {
+    padding: 0.5em;
+}
+
+.highcharts-data-table thead tr,
+.highcharts-data-table tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+.highcharts-data-table tr:hover {
+    background: #f1f7ff;
+}
+</style>
+<div class="d-sm-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-dark mb-0" style="margin-top: 20px;margin-left: 10px;">Patient Dashboard</h3>
+    <div class="dropdown"><button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-toggle="dropdown" type="button" style="margin-right: 10px;margin-top: 20px;">Menu</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="{% url 'home'%}">Dashboard</a>
+            <a class="dropdown-item" href="{% url 'airquality'%}">Air Quality</a>
+            <a class="dropdown-item" href="{% url 'activity'%}">Activity</a>
+            <a class="dropdown-item" href="{% url 'wallet'%}">Wallet</a>
+            <a class="dropdown-item" href="{% url 'leaderboard'%}">Leaderboard</a></div>
+    </div>
+</div>
+<div class="row mb-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body text-center shadow"><img class="rounded-circle mb-3 mt-4" src="{% static 'assets/images/admin.png'%}" width="160" height="160">
+                <div class="mb-3"><button class="btn btn-primary btn-sm" type="button">{{user.first_name}} {{user.last_name}}</button></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <tbody>
+                        <!--<tr>-->
+                        <!--    <th style="background: var(--white);">Age / Height/ Weight</th>-->
+                        <!--    <th style="background: var(--white);">{{data.umur}} / {{data.tb}} / {{data.bb}}</th>-->
+                        <!--</tr>-->
+                        <tr >
+                            <td style="background: var(--white);">Age</td>
+                            <td style="background: var(--white);">{{data.umur}}</td>
+                        </tr>
+                        <tr >
+                            <td style="background: var(--white);">Height</td>
+                            <td style="background: var(--white);">{{data.tb}}</td>
+                        </tr>
+                        <tr >
+                            <td style="background: var(--white);">Weight</td>
+                            <td style="background: var(--white);">{{data.bb}}</td>
+                        </tr>
+                        <tr >
+                            <td style="background: var(--white);">Disease</td>
+                            <td style="background: var(--white);">{{disease}}</td>
+                        </tr>
+                        <tr >
+                            <td style="background: var(--white);">Patient Status</td>
+                            <td style="background: var(--white);">{{status}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a href="https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fdevelopers.google.com%2F_d%2Freturn%3Fcontinue%3Dhttps%253A%252F%252Fdevelopers.google.com%252Ffit&flowName=GlifWebSignIn&flowEntry=ServiceLogin" class="btn btn-primary" role="button" style="margin-bottom: 20px;" target="_blank">CONNECT TO GOOGLE FIT</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header py-3">
+                <h6 class="text-primary font-weight-bold m-0">Goal Progress</h6>
+            </div>
+            <div class="card-body">
+                <script src="https://code.highcharts.com/highcharts.js"></script>
+                <script src="https://code.highcharts.com/highcharts-more.js"></script>
+                <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+                <script src="https://code.highcharts.com/modules/exporting.js"></script>
+                <script src="https://code.highcharts.com/modules/export-data.js"></script>
+                <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+                
+                <figure class="highcharts-figure">
+                    <div id="container-gauge"></div>
+                </figure>
+            <script>
+                function renderIcons() {
+                // Move icon
+                if (!this.series[0].icon) {
+                    this.series[0].icon = this.renderer.path(['M', -8, 0, 'L', 8, 0, 'M', 0, -8, 'L', 8, 0, 0, 8])
+                        .attr({
+                            stroke: '#303030',
+                            'stroke-linecap': 'round',
+                            'stroke-linejoin': 'round',
+                            'stroke-width': 2,
+                            zIndex: 10
+                        })
+                        .add(this.series[2].group);
+                }
+                this.series[0].icon.translate(
+                    this.chartWidth / 2 - 10,
+                    this.plotHeight / 2 - this.series[0].points[0].shapeArgs.innerR -
+                        (this.series[0].points[0].shapeArgs.r - this.series[0].points[0].shapeArgs.innerR) / 2
+                );
+
+                // Exercise icon
+                if (!this.series[1].icon) {
+                    this.series[1].icon = this.renderer.path(
+                        ['M', -8, 0, 'L', 8, 0, 'M', 0, -8, 'L', 8, 0, 0, 8,
+                            'M', 8, -8, 'L', 16, 0, 8, 8]
+                    )
+                        .attr({
+                            stroke: '#ffffff',
+                            'stroke-linecap': 'round',
+                            'stroke-linejoin': 'round',
+                            'stroke-width': 2,
+                            zIndex: 10
+                        })
+                        .add(this.series[2].group);
+                }
+                this.series[1].icon.translate(
+                    this.chartWidth / 2 - 10,
+                    this.plotHeight / 2 - this.series[1].points[0].shapeArgs.innerR -
+                        (this.series[1].points[0].shapeArgs.r - this.series[1].points[0].shapeArgs.innerR) / 2
+                );
+
+                // Stand icon
+                if (!this.series[2].icon) {
+                    this.series[2].icon = this.renderer.path(['M', 0, 8, 'L', 0, -8, 'M', -8, 0, 'L', 0, -8, 8, 0])
+                        .attr({
+                            stroke: '#303030',
+                            'stroke-linecap': 'round',
+                            'stroke-linejoin': 'round',
+                            'stroke-width': 2,
+                            zIndex: 10
+                        })
+                        .add(this.series[2].group);
+                }
+
+                this.series[2].icon.translate(
+                    this.chartWidth / 2 - 10,
+                    this.plotHeight / 2 - this.series[2].points[0].shapeArgs.innerR -
+                        (this.series[2].points[0].shapeArgs.r - this.series[2].points[0].shapeArgs.innerR) / 2
+                );
+                }
+                Highcharts.chart('container-gauge', {
+                chart: {
+                    type: 'solidgauge',
+                    height: '110%',
+                    events: {
+                        render: renderIcons
+                    }
+                },
+
+                title: {
+                    text: 'Activities & Eats',
+                    style: {
+                        fontSize: '24px'
+                    }
+                },
+
+                tooltip: {
+                    borderWidth: 0,
+                    backgroundColor: 'none',
+                    shadow: false,
+                    style: {
+                        fontSize: '16px'
+                    },
+                    valueSuffix: '%',
+                    pointFormat: '{series.name}<br><span style="font-size:2em; color: {point.color}; font-weight: bold">{point.y}</span>',
+                    positioner: function (labelWidth) {
+                        return {
+                            x: (this.chart.chartWidth - labelWidth) / 2,
+                            y: (this.chart.plotHeight / 2) + 15
+                        };
+                    }
+                },
+
+                pane: {
+                    startAngle: 0,
+                    endAngle: 360,
+                    background: [{ // Track for Move
+                        outerRadius: '112%',
+                        innerRadius: '88%',
+                        backgroundColor: Highcharts.color(Highcharts.getOptions().colors[0])
+                            .setOpacity(0.3)
+                            .get(),
+                        borderWidth: 0
+                    }, { // Track for Exercise
+                        outerRadius: '87%',
+                        innerRadius: '63%',
+                        backgroundColor: Highcharts.color(Highcharts.getOptions().colors[1])
+                            .setOpacity(0.3)
+                            .get(),
+                        borderWidth: 0
+                    }, { // Track for Stand
+                        outerRadius: '62%',
+                        innerRadius: '38%',
+                        backgroundColor: Highcharts.color(Highcharts.getOptions().colors[2])
+                            .setOpacity(0.3)
+                            .get(),
+                        borderWidth: 0
+                    }]
+                },
+
+                yAxis: {
+                    min: 0,
+                    max: 100,
+                    lineWidth: 0,
+                    tickPositions: []
+                },
+
+                plotOptions: {
+                    solidgauge: {
+                        dataLabels: {
+                            enabled: false
+                        },
+                        linecap: 'round',
+                        stickyTracking: false,
+                        rounded: true
+                    }
+                },
+
+                series: [{
+                    name: 'Steps',
+                    data: [{
+                        color: Highcharts.getOptions().colors[0],
+                        radius: '112%',
+                        innerRadius: '88%',
+                        y: {{step_goal}}
+                    }]
+                }, {
+                    name: 'Sleeps',
+                    data: [{
+                        color: Highcharts.getOptions().colors[1],
+                        radius: '87%',
+                        innerRadius: '63%',
+                        y: {{sleep_goal}}
+                    }]
+                }, {
+                    name: 'Calories',
+                    data: [{
+                        color: Highcharts.getOptions().colors[2],
+                        radius: '62%',
+                        innerRadius: '38%',
+                        y: {{calorie_goal}}
+                    }]
+                }]
+                });
+            </script>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="row mb-3">
+            <div class="col-lg-4">
+                <div class="card text-muted bg-warning shadow">
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col">
+                                <p class="m-0">Coin Achieved</p>
+                                <p class="m-0"><strong>{{coin}}</strong></p>
+                            </div>
+                            <div class="col-auto"><i class="fab fa-bitcoin fa-2x"></i></div>
+                        </div>
+                        <p class="text-white-60 small m-0"><i class="fas fa-arrow-up"></i>&nbsp;7% since last month</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card text-white bg-info shadow">
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col">
+                                <p class="m-0">Heart Point</p>
+                                <p class="m-0"><strong>{{heartpoint}}</strong></p>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-heart fa-2x"></i></div>
+                        </div>
+                        <p class="text-white-60 small m-0"><i class="fas fa-arrow-up"></i>&nbsp;10% since last month</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card text-white bg-success shadow">
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col">
+                                <p class="m-0">Leaderboard Score</p>
+                                <p class="m-0"><strong>{{score}}</strong></p>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-rocket fa-2x"></i></div>
+                        </div>
+                        <p class="text-white-60 small m-0"><i class="fas fa-arrow-up"></i>&nbsp;5% since last month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card shadow mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="text-primary font-weight-bold m-0">Coin Earns</h6>
+                    </div>
+                    <div id="bar-container"></div>
+                    <script src="https://code.highcharts.com/highcharts.src.js"></script>
+                    <script>
+                    Highcharts.chart('bar-container', {
+                        title: {
+                            text: 'Daily Coin Earned'
+                        },
+                        xAxis: {
+                            categories: {{date | safe}}
+                        },
+                        series: [{
+                            type: 'column',
+                            name: 'Coin Earned',
+                            data: {{coins}},
+                            color: 'orange'
+                        }],
+                    });
+                    </script>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card shadow mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="text-primary font-weight-bold m-0">Heart Points</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="area-container"></div>
+                        <script src="https://code.highcharts.com/highcharts.src.js"></script>
+                        <script>
+                            Highcharts.chart('area-container', {
+                                type: 'area',
+                                title: {
+                                    text: 'Daily Heart Point Scores'
+                                },
+                                xAxis: {
+                                    categories: {{date | safe}}
+                                },
+                                    series: [{
+                                    type: 'column',
+                                    name: 'Heart point',
+                                    data: {{scores}},
+                                    color: 'teal'
+                                },],
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
